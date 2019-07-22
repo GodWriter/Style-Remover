@@ -11,14 +11,18 @@ def bytes_feature(value):
 
 def parse_function(example_proto):
     keys_to_features = {
-        'image/encoded': tf.FixedLenFeature((), tf.string, default_value='')
+        'image/style_encoded': tf.FixedLenFeature((), tf.string, default_value=''),
+        'image/origin_encoded': tf.FixedLenFeature((), tf.string, default_value='')
     }
     parsed_example = tf.parse_single_example(example_proto, keys_to_features)
 
-    image = tf.image.decode_jpeg(parsed_example['image/encoded'], channels=3)
-    image = tf.to_float(image)
+    style_image = tf.image.decode_jpeg(parsed_example['image/style_encoded'], channels=3)
+    origin_image = tf.image.decode_jpeg(parsed_example['image/origin_encoded'], channels=3)
 
-    return image
+    style_image = tf.to_float(style_image)
+    origin_image = tf.to_float(origin_image)
+
+    return style_image, origin_image
 
 
 class Dataset(object):
@@ -26,16 +30,18 @@ class Dataset(object):
                  args):
         self.args = args
         self.tfrecord = []
-        self.image_list = os.listdir(self.args.image_path)
+        self.style_image_list = os.listdir(self.args.transfer_image_path)
 
         for tfrecord in os.listdir(self.args.dataSet):
             self.tfrecord.append(os.path.join(self.args.dataSet, tfrecord))
 
     def _add_to_tfrecord(self, filename, tfrecord_writer):
-        image = tf.gfile.GFile(os.path.join(self.args.image_path, filename), 'rb').read()
+        style_image = tf.gfile.GFile(os.path.join(self.args.transfer_image_path, filename), 'rb').read()
+        origin_image = tf.gfile.GFile(os.path.join(self.args.origin_image_path, filename[5:]), 'rb').read()
 
         example = tf.train.Example(features=tf.train.Features(feature={
-            'image/encoded': bytes_feature(image)
+            'image/style_encoded': bytes_feature(style_image),
+            'image/origin_encoded': bytes_feature(origin_image)
         }))
 
         tfrecord_writer.write(example.SerializeToString())
@@ -52,7 +58,7 @@ class Dataset(object):
                 while file_created < self.args.tfrecord_num and file_created_per_record < self.args.samples_per_file:
                     sys.stdout.write('\r>> Converting image %d/%d' % (file_created, self.args.tfrecord_num))
                     sys.stdout.flush()
-                    filename = self.image_list[file_created]
+                    filename = self.style_image_list[file_created]
                     self._add_to_tfrecord(filename, tfrecord_writer)
                     file_created += 1
                     file_created_per_record += 1
@@ -76,7 +82,7 @@ class Dataset(object):
         data_list = tf.placeholder(tf.string, shape=[None])
 
         iterator = self.load_dataset(data_list)
-        image = iterator.get_next()
+        style_image, origin_image = iterator.get_next()
 
         count = 1
         with tf.Session() as sess:
@@ -85,11 +91,12 @@ class Dataset(object):
 
             while True:
                 try:
-                    image_ = sess.run(image)
+                    style_image_, origin_image_ = sess.run([style_image, origin_image])
                 except tf.errors.OutOfRangeError:
                     print("End of dataSet")
                     break
                 else:
                     print("No.%d" % count)
-                    print("image shape: %s | type: %s" % (image_.shape, image_.dtype))
+                    print("style image shape: %s | type: %s" % (style_image_.shape, style_image_.dtype))
+                    print("origin image shape: %s | type: %s" % (origin_image_.shape, origin_image_.dtype))
                 count += 1
