@@ -68,7 +68,7 @@ class Generators(object):
     @staticmethod
     def style_remover(inputs, reuse=False):
         outputs = Generators.subsampled(inputs, False)
-        outputs = Generators.residual_net(outputs, False)
+        outputs = Generators.residual_net(outputs, 'style_remover', False)
         outputs = Generators.upsampling(outputs, False)
 
         return outputs
