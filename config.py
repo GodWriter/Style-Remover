@@ -16,13 +16,13 @@ def parse_args():
                         help='If the model is train, this argument should be true, else False')
     parser.add_argument('--GPU', type=str, default='0',
                         help='GPU used to train the model')
-    parser.add_argument('--model_file', type=str, default='model/style_remover.ckpt-done',
+    parser.add_argument('--model_file', type=str, default='model/style-remover.ckpt-done',
                         help='The model used to test')
     parser.add_argument('--test_image', type=str, default='test_image.jpg',
                         help='File path of the test image')
-    parser.add_argument('--test_dir', type=str, default='data/experiment-for-detection/origin',
+    parser.add_argument('--test_dir', type=str, default='data/test',
                         help='images to transfer')
-    parser.add_argument('--save_dir', type=str, default='generated/experiment-for-detection/style',
+    parser.add_argument('--save_dir', type=str, default='generated',
                         help='Path to save the generated images')
     parser.add_argument('--config', type=str, default='config/experiment-huanghun.yml',
                         help='Path of config file for testing')

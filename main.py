@@ -21,4 +21,7 @@ if __name__ == '__main__':
     elif module == 'train':
         solver = Solver(args_yml)
         solver.train()
+    elif module == 'test_dir':
+        solver = Solver(args_cmd)
+        solver.test_dir()
 

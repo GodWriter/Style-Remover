@@ -101,5 +101,42 @@ class Solver(object):
                 else:
                     step += 1
 
+    def test_dir(self):
+        generators = Generators(self.args)
+        dataprocess = DataProcess(self.args)
+        utils = Utils(self.args)
+
+        origin_images = os.listdir(self.args.test_dir)
+
+        for name in origin_images:
+            image = utils.read_image(os.path.join(self.args.test_dir, name))
+            image = tf.expand_dims(image, 0)
+            image = dataprocess.mean_image_subtraction(image)
+
+            with tf.Session() as sess:
+                image_ = sess.run(image)
+
+            generated = generators.style_remover(image_, reuse=False)
+
+            generated = tf.cast(generated, tf.uint8)
+            generated = tf.squeeze(generated, [0])
+
+            saver = tf.train.Saver(tf.global_variables(),
+                                   write_version=tf.train.SaverDef.V1)
+            init = tf.global_variables_initializer()
+
+            with tf.Session() as sess:
+                sess.run(init)
+                saver.restore(sess, self.args.model_file)
+
+                generated_file = os.path.join(self.args.save_dir, 'remove-style') + name
+
+                with open(generated_file, 'wb') as img:
+                    start_time = time.time()
+                    img.write(sess.run(tf.image.encode_jpeg(generated)))
+                    end_time = time.time()
+                    print('Generated_file elapsed time: %fs' % (end_time - start_time))
+
+            tf.reset_default_graph()
 
 
